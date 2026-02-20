@@ -17,6 +17,10 @@
   "background": {
     "service_worker": "src/background.js"
   },
+  "action": {
+    "default_title": "Prefix Time Limit Blocker",
+    "default_popup": "src/popup.html"
+  },
   "content_scripts": [
     {
       "matches": [

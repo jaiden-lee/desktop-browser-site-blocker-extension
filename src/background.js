@@ -109,6 +109,18 @@ function isRuleExceeded(rule) {
   return getUsageSeconds(rule.id) >= rule.limitSeconds;
 }
 
+function effectiveUsageForRule(rule, currentUrl) {
+  let used = getUsageSeconds(rule.id);
+  if (
+    activeSession.ruleId === rule.id &&
+    activeSession.startedAt &&
+    activeSession.url === currentUrl
+  ) {
+    used += Math.max(0, nowSeconds() - activeSession.startedAt);
+  }
+  return used;
+}
+
 function dnrRuleForBlocked(rule) {
   const blockedUrl = chrome.runtime.getURL(
     `${EXTENSION_BLOCKED_PAGE}?ruleId=${encodeURIComponent(rule.id)}`
@@ -404,6 +416,47 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "heartbeat") {
     updateActiveTracking(true)
       .then(() => sendResponse({ ok: true }))
+      .catch((err) => sendResponse({ error: err?.message || String(err) }));
+    return true;
+  }
+
+  if (message?.type === "getPopupStatus") {
+    maybeResetForNewDay()
+      .then(() => {
+        const url = typeof message.url === "string" ? message.url : "";
+        const matched = findMatchingRule(url);
+        const rules = cache.rules.map((rule) => {
+          const used = effectiveUsageForRule(rule, url);
+          return {
+            id: rule.id,
+            pattern: rule.pattern,
+            enabled: rule.enabled !== false,
+            limitSeconds: rule.limitSeconds,
+            usedSeconds: used,
+            remainingSeconds: Math.max(0, rule.limitSeconds - used),
+            blocked: rule.limitSeconds === 0 || used >= rule.limitSeconds
+          };
+        });
+
+        let current = null;
+        if (matched) {
+          const used = effectiveUsageForRule(matched, url);
+          current = {
+            id: matched.id,
+            pattern: matched.pattern,
+            limitSeconds: matched.limitSeconds,
+            usedSeconds: used,
+            remainingSeconds: Math.max(0, matched.limitSeconds - used),
+            blocked: matched.limitSeconds === 0 || used >= matched.limitSeconds
+          };
+        }
+
+        sendResponse({
+          current,
+          rules,
+          day: cache.lastResetDay
+        });
+      })
       .catch((err) => sendResponse({ error: err?.message || String(err) }));
     return true;
   }

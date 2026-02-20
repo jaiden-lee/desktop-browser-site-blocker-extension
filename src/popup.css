@@ -1,0 +1,80 @@
+body {
+  margin: 0;
+  min-width: 340px;
+  max-width: 340px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f7fb;
+  color: #1c2535;
+}
+
+.wrap {
+  padding: 12px;
+}
+
+h1 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #dce4f1;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+button {
+  border: none;
+  background: #0f5bff;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #084be1;
+}
+
+.muted {
+  color: #5b6474;
+  font-size: 12px;
+}
+
+.pattern {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.warn {
+  color: #b21f1f;
+}
+
+.rules-list {
+  display: grid;
+  gap: 8px;
+}
+
+.rule {
+  border: 1px solid #e2e8f3;
+  border-radius: 8px;
+  padding: 8px;
+}
