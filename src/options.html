@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prefix Time Limit Blocker</title>
+    <link rel="stylesheet" href="./options.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Daily Site Limits</h1>
+      <p class="hint">
+        Add a domain (example: <code>instagram.com</code>) or a URL prefix
+        (example: <code>youtube.com/shorts</code>). Limits reset daily at 12:00 AM local time.
+      </p>
+
+      <form id="rule-form" class="rule-form">
+        <input
+          id="pattern"
+          name="pattern"
+          type="text"
+          placeholder="instagram.com or youtube.com/shorts"
+          required
+        />
+        <input
+          id="limitSeconds"
+          name="limitSeconds"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Seconds per day (0 = block)"
+          required
+        />
+        <button type="submit">Add Rule</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <section>
+        <h2>Configured Rules</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Limit</th>
+              <th>Used</th>
+              <th>Remaining</th>
+              <th>Enabled</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="rules-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="./options.js"></script>
+  </body>
+</html>

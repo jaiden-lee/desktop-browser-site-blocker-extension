@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Prefix Time Limit Blocker",
+  "description": "Set daily time limits for domains or URL prefixes in Chromium browsers.",
+  "version": "1.0.0",
+  "permissions": [
+    "tabs",
+    "storage",
+    "declarativeNetRequest",
+    "alarms",
+    "idle",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/blocked.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": []
+  }
+}
