@@ -235,10 +235,22 @@ async function updateActiveTracking(forceRoll = false) {
     return;
   }
 
-  const matchingRule = findMatchingRule(tab.url);
+  let matchingRule = findMatchingRule(tab.url);
   if (!matchingRule) {
     await finalizeActiveSession();
     return;
+  }
+
+  const isSameTrackedSession =
+    activeSession.tabId === tab.id &&
+    activeSession.ruleId === matchingRule.id &&
+    activeSession.url === tab.url;
+  if (forceRoll && isSameTrackedSession) {
+    await finalizeActiveSession();
+    matchingRule = findMatchingRule(tab.url);
+    if (!matchingRule) {
+      return;
+    }
   }
 
   const shouldBlockNow = matchingRule.limitSeconds === 0 || isRuleExceeded(matchingRule);
@@ -386,6 +398,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((err) => {
         sendResponse({ error: err?.message || String(err) });
       });
+    return true;
+  }
+
+  if (message?.type === "heartbeat") {
+    updateActiveTracking(true)
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => sendResponse({ error: err?.message || String(err) }));
     return true;
   }
 

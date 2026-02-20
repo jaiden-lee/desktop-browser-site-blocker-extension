@@ -21,5 +21,6 @@ Limits reset daily at **12:00 AM local time**.
 - `0` seconds means fully blocked.
 - Tracking is efficient:
   - Uses event-driven active-tab tracking.
-  - Rolls usage once per minute for near-real-time enforcement.
+  - Uses lightweight visible-page heartbeats (1s) for accurate in-tab enforcement.
+  - Keeps 1-minute alarm checks for day rollover safety.
   - Uses `declarativeNetRequest` dynamic rules for low-overhead blocking.
