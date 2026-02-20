@@ -11,8 +11,11 @@ const EXTENSION_BLOCKED_PAGE = "src/blocked.html";
 let cache = {
   rules: [],
   usage: {},
-  lastResetDay: null
+  lastResetDay: null,
+  loaded: false
 };
+
+let initPromise = null;
 
 let activeSession = {
   tabId: null,
@@ -198,6 +201,27 @@ async function persistUsageAndDay() {
   });
 }
 
+async function ensureStateReady() {
+  if (cache.loaded) {
+    return;
+  }
+
+  if (!initPromise) {
+    initPromise = (async () => {
+      await loadState();
+      cache.loaded = true;
+      if (!cache.lastResetDay) {
+        cache.lastResetDay = dayKeyLocal();
+        await persistUsageAndDay();
+      }
+    })().finally(() => {
+      initPromise = null;
+    });
+  }
+
+  await initPromise;
+}
+
 function clearActiveSession() {
   activeSession = {
     tabId: null,
@@ -226,6 +250,8 @@ async function finalizeActiveSession() {
 }
 
 async function maybeResetForNewDay() {
+  await ensureStateReady();
+
   const today = dayKeyLocal();
   if (cache.lastResetDay === today) {
     return;
@@ -239,6 +265,7 @@ async function maybeResetForNewDay() {
 }
 
 async function updateActiveTracking(forceRoll = false) {
+  await ensureStateReady();
   await maybeResetForNewDay();
 
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -292,23 +319,20 @@ async function updateActiveTracking(forceRoll = false) {
   };
 }
 
-async function initialize() {
-  await loadState();
-  if (!cache.lastResetDay) {
-    cache.lastResetDay = dayKeyLocal();
-    await persistUsageAndDay();
-  }
-  await maybeResetForNewDay();
-  await syncDnrRules();
-  await updateActiveTracking();
-}
-
 chrome.runtime.onInstalled.addListener(() => {
-  initialize().catch(console.error);
+  ensureStateReady()
+    .then(() => maybeResetForNewDay())
+    .then(() => syncDnrRules())
+    .then(() => updateActiveTracking())
+    .catch(console.error);
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  initialize().catch(console.error);
+  ensureStateReady()
+    .then(() => maybeResetForNewDay())
+    .then(() => syncDnrRules())
+    .then(() => updateActiveTracking())
+    .catch(console.error);
 });
 
 chrome.tabs.onActivated.addListener(() => {
@@ -350,7 +374,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "getState") {
-    maybeResetForNewDay()
+    ensureStateReady()
+      .then(() => maybeResetForNewDay())
       .then(() => updateActiveTracking(true))
       .then(() => {
         sendResponse({
@@ -367,7 +392,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message?.type === "saveRules") {
     const incoming = Array.isArray(message.rules) ? message.rules : [];
-    finalizeActiveSession()
+    ensureStateReady()
+      .then(() => finalizeActiveSession())
       .then(async () => {
         const normalized = [];
         let dnrIndex = 1;
@@ -421,7 +447,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message?.type === "getPopupStatus") {
-    maybeResetForNewDay()
+    ensureStateReady()
+      .then(() => maybeResetForNewDay())
       .then(() => {
         const url = typeof message.url === "string" ? message.url : "";
         const matched = findMatchingRule(url);
@@ -464,4 +491,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return false;
 });
 
-initialize().catch(console.error);
+ensureStateReady()
+  .then(() => maybeResetForNewDay())
+  .then(() => syncDnrRules())
+  .then(() => updateActiveTracking())
+  .catch(console.error);
